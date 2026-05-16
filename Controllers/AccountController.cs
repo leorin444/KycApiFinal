@@ -2,7 +2,6 @@
 using KycApi.Data;
 using KycApi.DTOs;
 using KycApi.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -26,7 +25,9 @@ namespace KycApi.Controllers
             _config = config;
         }
 
+        // -----------------------------------------
         // 🔹 REGISTER USER
+        // -----------------------------------------
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] LoginRequest request)
         {
@@ -46,7 +47,9 @@ namespace KycApi.Controllers
             return Ok("User registered successfully");
         }
 
-        // 🔹 LOGIN (User + Admin)
+        // -----------------------------------------
+        // 🔹 LOGIN (Admin + User)
+        // -----------------------------------------
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -67,7 +70,10 @@ namespace KycApi.Controllers
                 role = user.Role
             });
         }
-        // Request password reset
+
+        // -----------------------------------------
+        // 🔹 REQUEST PASSWORD RESET
+        // -----------------------------------------
         [HttpPost("request-password-reset")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] string username)
         {
@@ -84,11 +90,13 @@ namespace KycApi.Controllers
             _context.PasswordResetTokens.Add(resetToken);
             await _context.SaveChangesAsync();
 
-            // Here you would send `resetToken.Token` via email
+            // Send via email in production
             return Ok(new { resetToken = resetToken.Token });
         }
 
-        // Reset password
+        // -----------------------------------------
+        // 🔹 RESET PASSWORD
+        // -----------------------------------------
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
@@ -106,7 +114,9 @@ namespace KycApi.Controllers
             return Ok("Password reset successfully");
         }
 
-        // 🔹 REFRESH JWT
+        // -----------------------------------------
+        // 🔹 REFRESH JWT TOKEN
+        // -----------------------------------------
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] string token)
         {
@@ -118,13 +128,17 @@ namespace KycApi.Controllers
                 return Unauthorized("Invalid or expired refresh token");
 
             var jwtToken = GenerateJwtToken(refreshToken.User);
+
             return Ok(new { token = jwtToken });
         }
 
+        // -----------------------------------------
         // 🔹 JWT GENERATOR
+        // -----------------------------------------
         private string GenerateJwtToken(User user)
         {
             var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -137,20 +151,25 @@ namespace KycApi.Controllers
                 audience: _config["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(5),
-                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
+                signingCredentials: new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256)
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        // -----------------------------------------
         // 🔹 REFRESH TOKEN GENERATOR
+        // -----------------------------------------
         private RefreshToken GenerateRefreshToken(int userId)
         {
             return new RefreshToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.UtcNow.AddDays(7),
-                UserId = userId
+                UserId = userId,
+                IsRevoked = false
             };
         }
     }

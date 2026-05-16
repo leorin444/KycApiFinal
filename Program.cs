@@ -1,12 +1,9 @@
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using KycApi.Data;
 using Microsoft.OpenApi.Models;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +12,8 @@ var jwtKey = builder.Configuration["Jwt:Key"] ?? "your_super_secret_key_here_123
 var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
 
 // ----- Services -----
-// Controllers
 builder.Services.AddControllers();
+builder.Services.AddSingleton<IEmailSender, ConsoleEmailSender>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -54,7 +51,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -79,7 +75,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // ----- Database -----
-// Get connection string from appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                        ?? "Server=localhost;Database=KycDb;Trusted_Connection=True;";
 
@@ -89,22 +84,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var app = builder.Build();
 
 // ----- Middleware -----
-if (app.Environment.IsDevelopment())
+// Enable Swagger in all environments (not just Development)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "KycApi v1");
-        c.RoutePrefix = string.Empty; // Swagger at root
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "KycApi v1");
+    c.RoutePrefix = string.Empty; // Swagger at root
+});
 
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map controllers
 app.MapControllers();
 
 // Optional: test connection string in browser

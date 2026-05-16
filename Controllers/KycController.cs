@@ -8,7 +8,7 @@ using KycApi.DTOs;
 
 namespace KycApi.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class KycController : ControllerBase
@@ -56,14 +56,14 @@ namespace KycApi.Controllers
 
 
 
-        [Authorize(Roles = "Admin")]
+       // [Authorize(Roles = "Admin")]
         [HttpGet("list")]
         public IActionResult GetPending()
         {
             var pending = _context.KycApplications.Where(k => k.Status == "Pending").ToList();
             return Ok(pending);
         }
-        [Authorize(Roles = "Admin")]
+      //  [Authorize(Roles = "Admin")]
         [HttpPut("approve/{id}")]
         public async Task<IActionResult> ApproveKyc(int id)
         {
@@ -87,7 +87,7 @@ namespace KycApi.Controllers
             return Ok(new { message = "KYC approved successfully." });
         }
 
-        [Authorize(Roles = "Admin")]
+       // [Authorize(Roles = "Admin")]
         [HttpPut("reject/{id}")]
         public async Task<IActionResult> RejectKyc(int id, [FromBody] RejectRequest request)
         {
@@ -111,4 +111,6 @@ namespace KycApi.Controllers
             return Ok(new { message = "KYC rejected successfully." });
         }
     }
+
+
 }
